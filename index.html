@@ -196,7 +196,7 @@ periodSelect.value = 'last1';
 
 // ---- hunter list ----
 const allHunters = new Set();
-Object.values(DATA.hunter_map).forEach(m => allHunters.add(m.hunter));
+Object.values(DATA.hunter_map).forEach(m => { if (m.hunter !== 'Sin asignar') allHunters.add(m.hunter); });
 const hunterListSorted = Array.from(allHunters).sort((a,b) => a.localeCompare(b, 'es'));
 let selectedHunters = new Set(hunterListSorted);
 
@@ -241,7 +241,7 @@ document.getElementById('hunterNone').addEventListener('click', () => { selected
 
 // ---- supervisor list ----
 const allSupervisors = new Set();
-Object.values(DATA.hunter_map).forEach(m => allSupervisors.add(m.supervisor));
+Object.values(DATA.hunter_map).forEach(m => { if (m.supervisor !== 'Sin asignar') allSupervisors.add(m.supervisor); });
 const supervisorListSorted = Array.from(allSupervisors).sort((a,b) => a.localeCompare(b, 'es'));
 let selectedSupervisors = new Set(supervisorListSorted);
 
@@ -343,6 +343,7 @@ function computeRows(months) {
     });
     if (psj <= 0) continue;
     const hm = DATA.hunter_map[collectorName] || { hunter: 'Sin asignar', supervisor: 'Sin asignar' };
+    if (hm.hunter === 'Sin asignar') continue;
     const row = { collector: collectorName, n_accounts: lastNAccounts, hunter: hm.hunter, supervisor: hm.supervisor, total, qr, psj, psj_pct: qr > 0 ? (psj/qr*100) : 0 };
     const minAmounts = DATA.min_amounts[collectorName] || {};
     TRAMOS.forEach(t => {
