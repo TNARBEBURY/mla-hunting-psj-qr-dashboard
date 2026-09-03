@@ -133,6 +133,18 @@ tbody tr:last-child td { border-bottom: none; }
         <div id="hunterList"></div>
       </div>
     </div>
+    <div class="field hunter-multiselect">
+      <label>Supervisor</label>
+      <button type="button" class="hunter-btn" id="supervisorBtn">Todos los supervisores</button>
+      <div class="hunter-panel" id="supervisorPanel">
+        <input type="text" class="search" id="supervisorSearch" placeholder="Buscar supervisor...">
+        <div class="row">
+          <button type="button" id="supervisorAll">Seleccionar todos</button>
+          <button type="button" id="supervisorNone">Ninguno</button>
+        </div>
+        <div id="supervisorList"></div>
+      </div>
+    </div>
     <div class="field">
       <label for="searchSeller">Buscar collector</label>
       <input type="text" id="searchSeller" placeholder="Ej: Akzonobel">
@@ -227,6 +239,51 @@ document.getElementById('hunterSearch').addEventListener('input', (e) => renderH
 document.getElementById('hunterAll').addEventListener('click', () => { selectedHunters = new Set(hunterListSorted); renderHunterList(document.getElementById('hunterSearch').value); updateHunterBtnLabel(); render(); });
 document.getElementById('hunterNone').addEventListener('click', () => { selectedHunters = new Set(); renderHunterList(document.getElementById('hunterSearch').value); updateHunterBtnLabel(); render(); });
 
+// ---- supervisor list ----
+const allSupervisors = new Set();
+Object.values(DATA.hunter_map).forEach(m => allSupervisors.add(m.supervisor));
+const supervisorListSorted = Array.from(allSupervisors).sort((a,b) => a.localeCompare(b, 'es'));
+let selectedSupervisors = new Set(supervisorListSorted);
+
+const supervisorList = document.getElementById('supervisorList');
+function renderSupervisorList(filterText) {
+  supervisorList.innerHTML = '';
+  supervisorListSorted
+    .filter(s => !filterText || s.toLowerCase().includes(filterText.toLowerCase()))
+    .forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'hunter-item';
+      const id = 'supervisor_' + s.replace(/[^a-zA-Z0-9]/g, '_');
+      div.innerHTML = `<input type="checkbox" id="${id}" ${selectedSupervisors.has(s) ? 'checked' : ''}> <label for="${id}">${s}</label>`;
+      div.querySelector('input').addEventListener('change', (e) => {
+        if (e.target.checked) selectedSupervisors.add(s); else selectedSupervisors.delete(s);
+        updateSupervisorBtnLabel();
+        render();
+      });
+      supervisorList.appendChild(div);
+    });
+}
+renderSupervisorList('');
+
+function updateSupervisorBtnLabel() {
+  const btn = document.getElementById('supervisorBtn');
+  if (selectedSupervisors.size === supervisorListSorted.length) btn.textContent = 'Todos los supervisores';
+  else if (selectedSupervisors.size === 0) btn.textContent = 'Ningún supervisor seleccionado';
+  else btn.textContent = selectedSupervisors.size + ' supervisores seleccionados';
+}
+
+document.getElementById('supervisorBtn').addEventListener('click', () => {
+  document.getElementById('supervisorPanel').classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('supervisorPanel');
+  const btn = document.getElementById('supervisorBtn');
+  if (!panel.contains(e.target) && e.target !== btn) panel.classList.remove('open');
+});
+document.getElementById('supervisorSearch').addEventListener('input', (e) => renderSupervisorList(e.target.value));
+document.getElementById('supervisorAll').addEventListener('click', () => { selectedSupervisors = new Set(supervisorListSorted); renderSupervisorList(document.getElementById('supervisorSearch').value); updateSupervisorBtnLabel(); render(); });
+document.getElementById('supervisorNone').addEventListener('click', () => { selectedSupervisors = new Set(); renderSupervisorList(document.getElementById('supervisorSearch').value); updateSupervisorBtnLabel(); render(); });
+
 // ---- table headers ----
 const theadRow = document.getElementById('theadRow');
 const columns = [
@@ -306,8 +363,10 @@ function render() {
   let filtered = rows.filter(r => {
     const rowHunters = r.hunter.split(' / ');
     const hunterOk = rowHunters.some(h => selectedHunters.has(h));
+    const rowSupervisors = r.supervisor.split(' / ');
+    const supervisorOk = rowSupervisors.some(s => selectedSupervisors.has(s));
     const searchOk = !searchText || r.collector.toLowerCase().includes(searchText);
-    return hunterOk && searchOk;
+    return hunterOk && supervisorOk && searchOk;
   });
 
   filtered.sort((a, b) => {
